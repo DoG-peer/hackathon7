@@ -34,7 +34,7 @@ addNormalSyntax({
   start: "~~",
   end: "~~",
   template: function(str){
-    return "<del>"+str+"</del>";
+    return "<del>"+parseSyntax(str)+"</del>";
   }
 });
 

@@ -449,6 +449,9 @@ function parseSyntax(str){
   }else{
     var sp = rest.split(end);
     var body = sp.shift();
+    if(syntax.hasOwnProperty("allowSyntax") && syntax.allowSyntax){
+      body = parseSyntax(body);
+    }
     rest = sp.join(end);
     return pre + syntax.template(body) + parseSyntax(rest);
   }
