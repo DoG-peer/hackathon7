@@ -33,8 +33,9 @@ addNormalSyntax({
 addNormalSyntax({
   start: "~~",
   end: "~~",
+  allowSyntax, true
   template: function(str){
-    return "<del>"+parseSyntax(str)+"</del>";
+    return "<del>"+str+"</del>";
   }
 });
 
@@ -57,8 +58,11 @@ addNormalSyntax({
           return "<a href=\" " + RegExp.$2+":"+RegExp.$3+ "\">" + RegExp.$1 +"</a>"
           break;
         case "ruby":
-          return "<ruby><rb>" + RegExp.$1 + "</rb><rp>(</rp><rt>"+RegExp.$3+"</rt><rp>)</rp></ruby>"
+          return "<ruby><rb>" + RegExp.$1 + "</rb><rp>(</rp><rt>"+RegExp.$3+"</rt><rp>)</rp></ruby>";
           break;
+        case "color":
+          return "<span style=\"color: "+RegExp.$3+"\">" + RegExp.$1 + "</span>";
+          break;// res226
         default:
           return "["+parseSyntax(str)+"]";
           break;
@@ -163,3 +167,5 @@ addEffectSyntax({
 //[亜米利加,ruby:アメリカ]  => ルビ
 //[ぐーぐる, http://google.co.jp] => リンク
 //[**hoge**] => [<strong>hoge</strong>]
+//[目がかゆい, color:red]
+//
