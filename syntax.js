@@ -7,10 +7,65 @@ addNormalSyntax({
 });
 
 addNormalSyntax({
+  start: "__",
+  end: "__",
+  template: function(str){
+    return "<strong>"+str+"</strong>";
+  }
+});
+
+addNormalSyntax({
+  start: "*",
+  end: "*",
+  template: function(str){
+    return "<em>"+str+"</em>";
+  }
+});
+
+addNormalSyntax({
+  start: "_",
+  end: "_",
+  template: function(str){
+    return "<em>"+str+"</em>";
+  }
+});
+
+addNormalSyntax({
+  start: "~~",
+  end: "~~",
+  template: function(str){
+    return "<del>"+str+"</del>";
+  }
+});
+
+addNormalSyntax({
   start: "//",
   end: "",
   template: function(){
     return "<br>";
+  }
+});
+
+addNormalSyntax({
+  start: "[",
+  end: "]",
+  template: function(str){
+    if(/^(.*),(.*):(.*)$/.test(str)){
+      switch(RegExp.$2.trim()){
+        case "http":
+        case "https":
+          return "<a href=\" " + RegExp.$2+":"+RegExp.$3+ "\">" + RegExp.$1 +"</a>"
+          break;
+        case "ruby":
+          return "<ruby><rb>" + RegExp.$1 + "</rb><rp>(</rp><rt>"+RegExp.$3+"</rt><rp>)</rp></ruby>"
+          break;
+        default:
+          return "["+parseSyntax(str)+"]";
+          break;
+      }
+    }else{
+      return "["+parseSyntax(str)+"]";
+    }
   }
 });
 
@@ -26,11 +81,56 @@ addBlockSyntax({
 });
 
 addSpecialSyntax({
+  mark: /^#([^#].*)/,
+  template: function(str){
+    return "<h1>"+str+"</h1>";
+  }
+});
+addSpecialSyntax({
   mark: /^##([^#].*)/,
   template: function(str){
     return "<h2>"+str+"</h2>";
   }
 });
+addSpecialSyntax({
+  mark: /^###([^#].*)/,
+  template: function(str){
+    return "<h3>"+str+"</h3>";
+  }
+});
+addSpecialSyntax({
+  mark: /^####([^#].*)/,
+  template: function(str){
+    return "<h4>"+str+"</h4>";
+  }
+});
+addSpecialSyntax({
+  mark: /^#####([^#].*)/,
+  template: function(str){
+    return "<h5>"+str+"</h5>";
+  }
+});
+addSpecialSyntax({
+  mark: /^######([^#].*)/,
+  template: function(str){
+    return "<h6>"+str+"</h6>";
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 addEffectSyntax({
   mark: /^==[=]+$/,
@@ -40,7 +140,6 @@ addEffectSyntax({
 });
 
 
-setupLineParser();
 
 // parseSyntax("xx**foo**ずれているｗ// ** hoge   **")
 // => "xx<strong>foo</strong>ずれているｗ<br> <strong> hoge   </strong>"
@@ -60,3 +159,7 @@ setupLineParser();
 
 //result("```\n##hoge\n```")
 //"<pre>##hoge</pre>"
+//
+//[亜米利加,ruby:アメリカ]  => ルビ
+//[ぐーぐる, http://google.co.jp] => リンク
+//[**hoge**] => [<strong>hoge</strong>]
