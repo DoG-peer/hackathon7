@@ -120,7 +120,7 @@ function addBlockSyntax(syntax){
     template: syntax.template,
     validation: syntax.validation,
     allowBlock: syntax.allowBlock || false,
-    allowSyntax: syntax.allowSyntax || true
+    allowSyntax: !!(syntax.allowSyntax)
   });
 }
 
@@ -154,8 +154,9 @@ function checkLine(line){
   if(blockHierarchy.length > 1){
     var id = blockHierarchy[blockHierarchy.length-1][0].id;
     var nearestBlock = blockSyntaxes[id];
+    var outerBlock = blockSyntaxes[blockHierarchy[blockHierarchy.length-2][0].id];
     //TODO: ブロックでない場合の排除もしくは対応
-    if(!(nearestBlock.validation.test(line))){
+    if(!(nearestBlock.validation.test(line)) && !!outerBlock.allowSyntax ){
       // スペシャルかをチェック
       for(var i = 0; i < specialSyntaxes.length; i++){
         if(specialSyntaxes[i].mark.test(line)){
@@ -177,6 +178,24 @@ function checkLine(line){
         }
       }
     }
+      console.log(nearestBlock);
+    if(!nearestBlock.hasOwnProperty("allowSyntax") || nearestBlock.allowSyntax){
+      // エフェクトかをチェック
+      for(var i = 0; i < effectSyntaxes.length; i++){
+        if(effectSyntaxes[i].mark.test(line)){
+          return ["Effect",i];
+        }
+      }
+
+      // スペシャルかをチェック
+      for(var i = 0; i < specialSyntaxes.length; i++){
+        if(specialSyntaxes[i].mark.test(line)){
+          return ["Special",i];
+        }
+      }
+    }else{
+      return ["Normal"];
+    }
   }
 
   // ブロックの開始かをチェック(登録順)(ブロックに入っていない場合)
@@ -185,7 +204,6 @@ function checkLine(line){
       return ["StartBlock", i];
     }
   }
-
   // エフェクトかをチェック
   for(var i = 0; i < effectSyntaxes.length; i++){
     if(effectSyntaxes[i].mark.test(line)){
@@ -264,7 +282,7 @@ function parse(lines){
         emitFromExcited();
         upPosition();
         break;
-      case "S)artBlock":
+      case "StartBlock":
         emitFromExcited();
         appendBlockToTree(info[1]);
         break;
@@ -282,6 +300,7 @@ function parse(lines){
         break;
     }
   });
+  emitFromExcited();
 }
 
 function toHtml(tree, option){
@@ -295,12 +314,12 @@ function toHtml(tree, option){
       case "Special":
         var lines = tree.slice(1).map(function(x){return toHtml(x, newOption);});
         var syntax = specialSyntaxes[state.id];
-        var variables = lines[0].match(mark).slice(1);
-        return syntax.template.apply(variables);
+        var variables = lines[0].match(syntax.mark).slice(1);
+        return syntax.template.apply(this,variables);
         break;
       case "Effect":
-        var syntax = specialSyntaxes[state.id];
-        return syntax.template.apply(tree[1].concat([lines[1]]));
+        var syntax = effectSyntaxes[state.id];
+        return syntax.template.apply(this,tree[1].concat([tree[2]]));
         break;
       case "Main":
         var lines = tree.slice(1).map(function(x){return toHtml(x, newOption);});
@@ -337,9 +356,18 @@ function readLine(str, option){
   }
 }
 
-function result(){
+function init(){
+  docTree = [{type: "Main"}];
+  blockHierarchy = [docTree];
+  excited = [];
+}
+
+function result(str){
+  init();
+  var lines = (typeof(str)=="string") ? str.split("\n") : str;
   setupLineParser();
-  return toHeml(docTree,{});
+  parse(lines);
+  return toHtml(docTree,{});
 }
 
 /**
@@ -378,54 +406,57 @@ function parseSyntax(str){
   // startを見つける
   var posh=[lineParseTree];
   var head = 0; //startの先頭
-  var tail;  //startの末尾
-  var i=0;
+  var tail = 0;  //startの末尾
   var found = false;
-  var flag=true;// 進んでいたらtrue, 戻っていたらfalse
+  var flag = true;// 進んでいたらtrue, 戻っていたらfalse
   while(head < str.length){
     var pos = posh[posh.length-1];
     if(flag){
-      if((i<str.length) && pos.hasOwnProperty(str[i])){
-        posh.push(pos[str[i]]);
-        i++;
+      if((tail<str.length) && pos.hasOwnProperty(str[tail])){
+        posh.push(pos[str[tail]]);
+        tail++;
       }else{
+        tail--;
         flag = false;
       }
     }else{
-      if(pos.hasOwnProperty("syntax") && RegExp(pos.syntax.end).test(str.substr(i+1))){
+      if(typeof(pos) != "undefined" && pos.hasOwnProperty("syntax") && RegExp(escapeReg(pos.syntax.end)).test(str.substr(tail+1))){
         found = true;
-        tail = Math.min(i,str.length-1);
+        tail = Math.min(tail, str.length-1);
         break;
-      }else if(i < head){
+      }else if(tail < head){
         posh = [lineParseTree];
         head++;
-        i = head;
+        tail = head;
+        flag = true;
       }else{
         posh.pop();
-        i--;
+        tail--;
       }
     }
   }
+  //return [head,tail,posh];
   if(!(found)){return str;}
 
   // endを見つける
-  var pre = str.substr(0,head-1);
+  var pre = str.substr(0,head);
   var start = str.substr(head, tail-head+1);
   var rest = str.substr(tail+1);
   var syntax = posh[posh.length-1].syntax;
   var end = syntax.end;
   if(end==""){
-    return syntax.template();
+    return pre + syntax.template() + parseSyntax(rest);;
   }else{
     var sp = rest.split(end);
     var body = sp.shift();
     rest = sp.join(end);
-    return syntax.template(body) + parseSyntax(rest);
+    return pre + syntax.template(body) + parseSyntax(rest);
   }
 }
 
-
-
+function escapeReg(str){
+  return str.replace(/\W/g, "\\$&");
+}
 
 
 
