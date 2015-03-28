@@ -450,7 +450,7 @@ function parseSyntax(str){
     var sp = rest.split(end);
     var body = sp.shift();
     rest = sp.join(end);
-    return pre + syntax.template(body) + parseSyntax(rest);
+    return pre + syntax.template(parseSyntax(body)) + parseSyntax(rest);
   }
 }
 
