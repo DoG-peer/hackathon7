@@ -33,7 +33,7 @@ addNormalSyntax({
 addNormalSyntax({
   start: "~~",
   end: "~~",
-  allowSyntax, true
+  allowSyntax: true,
   template: function(str){
     return "<del>"+str+"</del>";
   }
@@ -72,18 +72,44 @@ addNormalSyntax({
     }
   }
 });
+addNormalSyntax({
+  start: "![",
+  end: "]",
+  template: function(str){
+    if(/^(.*),(.*)$/.test(str)){
+      return "<img src=\"" +RegExp.$2+"\" alt=\""+RegExp.$1+"\" title=\""+RegExp.$1+"\">";
+    }else{
+      return "!["+parseSyntax(str)+"]";
+    }
+  }
+})
 
 addBlockSyntax({
    start: /^```/,
    end: /^```/,
    template: function(lines){
-     return "<pre>"+lines.join("<br>")+"</pre>";
+     return "<pre>"+lines.slice(1,-1).join("<br>")+"</pre>";
    },
    validation: /^/,
    allowBlock: false,
    allowSyntax: false
 });
-
+/*
+addBlockSyntax({
+  start: /^>\s/,
+  end: /^$/,
+  validation: /^>/,
+  template: function(lines){
+    console.log(lines);
+    var ar = lines.map(function(line){
+      return line.slice(2);
+    });
+    return "<blockquote>"+ar.join("<br>") + "</blockquote>";
+  },
+  allowSyntax: true,
+  allowBlock: false
+});
+*/
 addSpecialSyntax({
   mark: /^#([^#].*)/,
   template: function(str){

@@ -156,7 +156,7 @@ function checkLine(line){
     var nearestBlock = blockSyntaxes[id];
     var outerBlock = blockSyntaxes[blockHierarchy[blockHierarchy.length-2][0].id];
     //TODO: ブロックでない場合の排除もしくは対応
-    if(!(nearestBlock.validation.test(line)) && !!outerBlock.allowSyntax ){
+    if(!(nearestBlock.validation.test(line)) && typeof(outerBlovk) != "undefined" && outerBlock.hasOwnProperty("allowSyntax") &&outBlock.allowSyntax ){
       // スペシャルかをチェック
       for(var i = 0; i < specialSyntaxes.length; i++){
         if(specialSyntaxes[i].mark.test(line)){
@@ -178,7 +178,6 @@ function checkLine(line){
         }
       }
     }
-      console.log(nearestBlock);
     if(!nearestBlock.hasOwnProperty("allowSyntax") || nearestBlock.allowSyntax){
       // エフェクトかをチェック
       for(var i = 0; i < effectSyntaxes.length; i++){
@@ -253,12 +252,13 @@ function appendEffectToTree(i,line){
   },[].concat(excited),line]);
 }
 
-function appendBlockToTree(i){
+function appendBlockToTree(i, line){
   var block = [{
     type: "Block", id: i
   }];
   blockHierarchy[blockHierarchy.length - 1].push(block);
   blockHierarchy.push(block);
+  block.push(line);
   // postionの最後にblockを追加
 }
 
@@ -280,11 +280,12 @@ function parse(lines){
         break;
       case "EndBlock":
         emitFromExcited();
+        blockHierarchy[blockHierarchy.length - 1].push(line);
         upPosition();
         break;
       case "StartBlock":
         emitFromExcited();
-        appendBlockToTree(info[1]);
+        appendBlockToTree(info[1],line);
         break;
       case "Special":
         emitFromExcited();
